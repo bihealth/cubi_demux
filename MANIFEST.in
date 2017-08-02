@@ -1,0 +1,2 @@
+include versioneer.py
+include cubi_demux/_version.py
