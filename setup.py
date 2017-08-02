@@ -65,7 +65,7 @@ setup(
             (
                 'cubi-demux=cubi_demux.apps.cubi_demux:main',
             ),
-        )),
+        ),
     },
     include_package_data=True,
     install_requires=requirements,

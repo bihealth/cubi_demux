@@ -1,0 +1,10 @@
+# Shared Snakefile for cubi-demux.
+
+from cubi_demux import __main__
+
+# Create DemuxApp object from the configuration after loading.
+app = __main__.DemuxApp(config)
+
+# The main rule depends on all top-level file sto create.
+rule all:
+    input:
