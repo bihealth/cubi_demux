@@ -1,0 +1,2 @@
+# Snakemake is used for scheduling.
+snakemake
