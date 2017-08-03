@@ -1,10 +1,88 @@
-# Shared Snakefile for cubi-demux.
+# Central Snakemake for cubi_demux.
 
-from cubi_demux import __main__
+from cubi_demux.__main__ import DemuxApp, wrapper_path
 
 # Create DemuxApp object from the configuration after loading.
-app = __main__.DemuxApp(config)
+app = DemuxApp(config)
 
-# The main rule depends on all top-level file sto create.
+# -------------------------------------------------------------------------------------------------
+# Define local rules.
+
+localrules: all, marker_file, sample_sheet
+
+# -------------------------------------------------------------------------------------------------
+# The main rule depends on the "result is complete" file.
+
 rule all:
+    input: app.get_result_files_marker()
+
+# -------------------------------------------------------------------------------------------------
+# Create "result is complete" file.
+
+rule marker_file:
     input:
+        app.get_result_files_demux(),
+        app.get_result_files_fastqc(),
+        app.get_result_files_hts_screen(),
+    output: app.get_result_files_marker()
+    shell: 'set -x; date --iso-8601=s >{output}'
+
+# -------------------------------------------------------------------------------------------------
+# Create sample sheet.
+
+rule sample_sheet:
+    output: sheet=app.out_prefix('Sample_Sheet.csv')
+    run:
+        app.write_sample_sheet(output.sheet)
+
+# -------------------------------------------------------------------------------------------------
+# Perform demultiplexing.
+
+rule demux:
+    input: sheet=app.out_prefix('Sample_Sheet.csv')
+    output: app.get_result_files_demux()
+    params:
+        flowcell_token=app.demux_wrapper.flow_cell.name_tokens.flow_cell,
+        input_dir=app.config['cubi_demux']['input_dir'],
+        output_dir=app.config['cubi_demux']['output_dir'],
+        tiles_arg=app.demux_wrapper.get_tiles_arg(),
+    threads: config['cubi_demux']['cores']
+    wrapper: wrapper_path(app.bcl2fastq_wrapper())
+
+# -------------------------------------------------------------------------------------------------
+# Run FastQC.
+
+rule fastqc:
+    input:
+        fastq=app.out_prefix('{sample}/{flowcell}/{lane}/{filename}.fastq.gz')
+    output:
+        html=app.out_prefix('{sample}/{flowcell}/{lane}/qc/fastqc/{filename}_fastqc.html'),
+        html_md5=app.out_prefix('{sample}/{flowcell}/{lane}/qc/fastqc/{filename}_fastqc.html.md5'),
+        zip=app.out_prefix('{sample}/{flowcell}/{lane}/qc/fastqc/{filename}_fastqc.zip'),
+        zip_md5=app.out_prefix('{sample}/{flowcell}/{lane}/qc/fastqc/{filename}_fastqc.zip.md5'),
+    threads: 1
+    wrapper: wrapper_path('fastqc')
+
+# -------------------------------------------------------------------------------------------------
+# Run HTS Screen.
+
+rule hts_screen:
+    input:
+        fastq=app.out_prefix('{sample}/{flowcell}/{lane}/{filename}.fastq.gz')
+    output:
+        txt=app.out_prefix('{sample}/{flowcell}/{lane}/qc/hts_screen/{filename}_hts_screen.txt'),
+        kraken=app.out_prefix('{sample}/{flowcell}/{lane}/qc/kraken/{filename}_kraken_report.gz'),
+    threads: 2
+    wrapper: wrapper_path('hts_screen')
+
+# -------------------------------------------------------------------------------------------------
+# Collect all QC statistics using MultiQC.
+
+rule illumina_demultiplexing_multiqc:
+    input:
+        app.get_result_files_fastqc() + app.get_result_files_hts_screen()
+    output:
+        html=app.out_prefix('multiqc/multiqc_report.html'),
+        zip=app.out_prefix('multiqc/multiqc_report_data.zip'),
+    threads: 1
+    wrapper: wrapper_path('multiqc')

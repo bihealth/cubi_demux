@@ -1,2 +1,10 @@
-# Snakemake is used for scheduling.
+# Base dependencies for executing `cubi-demux`.
+#
+# Note that the tools for the heavy lifting (bcl2fastq etc.) are installed
+# via conda using Snakemake's conda integration.
+
+# Snakemake is used for scheduling and execution.
 snakemake
+
+# We use ruamel.yaml for parsing YAML.
+ruamel.yaml

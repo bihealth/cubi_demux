@@ -6,7 +6,13 @@
 # Configuration for the demultiplexing.
 cubi_demux:
   input_dir: null  # path to input, override with `--input-dir`
-  num_threads: 8   # number of threads, override with `--num-threads`
+  output_dir: null  # path to input, override with `--output-dir`
+  cores: 8   # number of threads, override with `--cores`
+  barcode_mismatches: null  # default is RTA version specific
+  # Selecting lanes and tiles are mutually exclusive.
+  lanes: null  # null or list of integers
+  tiles: null  # tile specifications for bcl2fastq executable
+  continue: false  # continue (do not break if output dir exists)
 
 # Configuration for the screening after demultiplexing.  You should provide
 # a list of BWA-indexed references and the path to a Kraken DB.  The data
@@ -16,22 +22,22 @@ hts_screen:
   sample_rate: 0.001  # sample this rate of reads for screening
   kraken_db: '/fast/projects/cubit/current/static_data/app_support/kraken/0.10.5-cubi20160426/minikraken_20141208'
   references:
-    - name: 'H. sapiens'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/hs37/hs37.fa'
-    - name: 'M. musculus'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/NCBIM37/sanger/NCBIM37_um.fa'
-    - name: 'D. rerio'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/danRer10/ucsc/danRer10.fa'
-    - name: 'D. melanogaster'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/dm6/ucsc/dm6.fa'
-    - name: 'S. cerevisiae'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/sacCer3/ucsc/sacCer3.fa'
-    - name: 'E. coli'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/ecoli/GCA_000005845.2_ASM584v2/ecoli.fa'
-    - name: 'Phi X 174'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/phix/illumina/phix.fa'
-    - name: 'Univec 9'
-      bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/UniVec/9/UniVec.fa'
+  - name: 'H. sapiens'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/hs37/hs37.fa'
+  - name: 'M. musculus'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/NCBIM37/sanger/NCBIM37_um.fa'
+  - name: 'D. rerio'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/danRer10/ucsc/danRer10.fa'
+  - name: 'D. melanogaster'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/dm6/ucsc/dm6.fa'
+  - name: 'S. cerevisiae'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/sacCer3/ucsc/sacCer3.fa'
+  - name: 'E. coli'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/ecoli/GCA_000005845.2_ASM584v2/ecoli.fa'
+  - name: 'Phi X 174'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/phix/illumina/phix.fa'
+  - name: 'Univec 9'
+    bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/UniVec/9/UniVec.fa'
 
 # The sample sheet.  Either a path to the sample sheet or a dict with the
 # sample sheet.  The path can can also be set with `--sample-sheet`.
