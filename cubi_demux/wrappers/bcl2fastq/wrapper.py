@@ -24,8 +24,6 @@ set -x
 # -------------------------------------------------------------------------------------------------
 # Setup Auto-cleaned Temporary Directory.
 
-#export TMPDIR=$(mktemp -d)
-#trap "rm -rf $TMPDIR" EXIT
 export TMPDIR=$TMPDIR/v1yayaya
 mkdir -p $TMPDIR
 
@@ -59,26 +57,26 @@ make \
 # Move sample FASTQ files.
 flowcell={snakemake.params.flowcell_token}
 srcdir=$TMPDIR/demux_out/Project_Project
-for path in $srcdir/*/*; do
+for path in $srcdir/*/*.fastq.gz; do
     sample=$(basename $(dirname $path) | cut -d _ -f 2-)
     lane=$(basename $path | rev | cut -d _ -f 3 | rev)
     dest={snakemake.params.output_dir}/$sample/$flowcell/$lane/$(basename $path)
 
     cp $path $dest
     pushd $(dirname $dest) \
-    && md5sum $(basename $dest) >($basename $dest).md5 \
+    && md5sum $(basename $dest) >$(basename $dest).md5 \
     && popd
 done
 
 # Move undetermined FASTQ files.
 srcdir=$TMPDIR/demux_out
-for path in $srcdir/Undetermined_indices/*/*; do
+for path in $srcdir/Undetermined_indices/*/*.fastq.gz; do
     lane=$(basename $path | rev | cut -d _ -f 3 | rev)
     dest={snakemake.params.output_dir}/Undetermined/$flowcell/$lane/$(basename $path)
 
     cp $path $dest
     pushd $(dirname $dest) \
-    && md5sum $(basename $dest) >($basename $dest).md5 \
+    && md5sum $(basename $dest) >$(basename $dest).md5 \
     && popd
 done
 """)
