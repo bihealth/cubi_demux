@@ -72,7 +72,7 @@ def work(args, workdir, config_path, config):
         '--cores', config['cubi_demux']['cores'],
         '--use-conda'
     ]
-    if args['verbose']:
+    if args.verbose:
         argv.append('--verbose')
     for k, v in vars(args).items():
         argv += ['--config', '{}={}'.format(k, v)]
