@@ -64,11 +64,22 @@ def write_config_file(args):
 
 def work(args, workdir, config_path, config):
     """Perform the actual work."""
-    args = dict((k, v) for k, v in vars(args).items() if v is not None)
-    snakemake.snakemake(
-        PATH_SNAKEFILE, workdir=workdir, configfile=config_path,
-        cores=config['cubi_demux']['cores'], verbose=args['verbose'],
-        use_conda=True)
+    # Build arguments to pass to ``snakemake``.
+    argv = [
+        '--snakefile', PATH_SNAKEFILE,
+        '--directory', workdir,
+        '--configfile', config_path,
+        '--cores', config['cubi_demux']['cores'],
+        '--use-conda'
+    ]
+    if args['verbose']:
+        argv.append('--verbose')
+    for k, v in vars(args).items():
+        argv += ['--config', '{}={}'.format(k, v)]
+    argv = list(map(str, argv))
+    print('Executing "snakemake {}"...'.format(' '.join(argv)),
+          file=sys.stderr)
+    snakemake.main(argv)
 
 
 def run(args):
@@ -78,7 +89,7 @@ def run(args):
     config_path, config = write_config_file(args)
     # Run Snakemake in temporary directory.
     if args.work_in_output:
-        print('Working in ouatput directory: {}'.format(args.output_dir),
+        print('Working in output directory: {}'.format(args.output_dir),
               file=sys.stderr)
         work(args, args.output_dir, config_path, config)
     else:
@@ -96,38 +107,32 @@ def main(argv=None):
         '--version', action='version', version='%%(prog)s %s' % __version__)
     parser.add_argument(
         '--verbose', action='store_true', default=False)
-    parser.add_argument(
-        '--work-in-output', action='store_true', default=False,
-        help='Work output directory instead of temporary directory.')
-    parser.add_argument(
-        '--config', type=str, default=DEFAULT_CONFIG_YAML,
-        help='Path to configuration YAML file. Default: {}'.format(
-            DEFAULT_CONFIG_YAML))
-    parser.add_argument(
-        '--sample-sheet', type=str, default=None,
-        help=('Path to sample sheet YAML file, overrides setting in '
-              'config YAML.'))
-    parser.add_argument(
-        '--num-threads', type=int, default=None,
-        help=('Number of threads to run with, overrides setting in '
-              'config YAML.'))
-    parser.add_argument(
+
+    group = parser.add_argument_group('Input / Output Related')
+    group.add_argument(
         '--input-dir', type=str, default=None,
         help=('Path to input sequencer output folder, overrides setting in '
               'config YAML.'))
-    parser.add_argument(
+    group.add_argument(
         '--output-dir', type=str, default=None,
         help='Path to output folder, overrides setting in config YAML.')
-    parser.add_argument(
+    group.add_argument(
+        '--sample-sheet', type=str, default=None,
+        help=('Path to sample sheet YAML file, overrides setting in '
+              'config YAML.'))
+    group.add_argument(
+        '--config', type=str, default=DEFAULT_CONFIG_YAML,
+        help='Path to configuration YAML file. Default: {}'.format(
+            DEFAULT_CONFIG_YAML))
+
+    group = parser.add_argument_group('Misc. Configuration')
+    group.add_argument(
         '--barcode-mismatches', type=int, default=None,
         help=('Mismatches to allow in barcode, default is 0 for v1 and '
               '1 for v2'))
-    parser.add_argument(
+    group.add_argument(
         '--cores', type=int, default=None,
         help='Number of cores to use, overrides setting in config YAML.')
-    parser.add_argument(
-        '--continue', action='store_true', default=None,
-        help='Do not exit if output dir exists but continue.')
 
     # Configuration related to lane and tile selection.
     group = parser.add_argument_group('Lane/Tile Selection')
@@ -141,6 +146,14 @@ def main(argv=None):
         '--tiles', type=str, default=[], action='append', dest='tiles',
         help=('Select tile regex; provide multiple times for multiple '
               'regexes; conflicts with --lane'))
+
+    group = parser.add_argument_group('Snakemake Execution Related')
+    group.add_argument(
+        '--continue', action='store_true', default=None,
+        help='Do not exit if output dir exists but continue.')
+    group.add_argument(
+        '--work-in-output', action='store_true', default=False,
+        help='Work output directory instead of temporary directory.')
 
     # Parse command line arguments.
     args = parser.parse_args(argv)

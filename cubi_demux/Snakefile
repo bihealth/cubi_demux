@@ -72,7 +72,7 @@ rule hts_screen:
     output:
         txt=app.out_prefix('{sample}/{flowcell}/{lane}/qc/hts_screen/{filename}_hts_screen.txt'),
         kraken=app.out_prefix('{sample}/{flowcell}/{lane}/qc/kraken/{filename}_kraken_report.gz'),
-    threads: 2
+    threads: 4
     wrapper: wrapper_path('hts_screen')
 
 # -------------------------------------------------------------------------------------------------

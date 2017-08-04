@@ -12,4 +12,8 @@ shell(r"""
 fastqc \
     -o $(dirname {snakemake.output.html}) \
     {snakemake.input.fastq}
+
+pushd $(dirname {snakemake.output.html}) \
+&& for x in *.html *.zip; do md5sum $x >$x.md5; done \
+&& popd
 """)

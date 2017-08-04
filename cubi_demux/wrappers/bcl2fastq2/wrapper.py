@@ -32,7 +32,7 @@ trap "rm -rf $TMPDIR" EXIT
 head -n 10000 {snakemake.input.sheet}
 
 # -------------------------------------------------------------------------------------------------
-# Execute bcl2fastq
+# Execute bcl2fastq v2
 
 bcl2fastq \
     --barcode-mismatches {barcode_mismatches} \
@@ -40,7 +40,8 @@ bcl2fastq \
     --runfolder-dir {snakemake.params.input_dir} \
     --output-dir $TMPDIR/demux_out \
     --demultiplexing-threads {bcl2fastq_threads} \
-    --processing-threads {bcl2fastq_threads} {snakemake.params.tiles_arg}
+    --processing-threads {bcl2fastq_threads} \
+    {snakemake.params.tiles_arg}
 
 # -------------------------------------------------------------------------------------------------
 # Move Files to Destination.
@@ -54,7 +55,9 @@ for path in $srcdir/*; do
     dest={snakemake.params.output_dir}/$sample/$flowcell/$lane/$(basename $path)
 
     mv $path $dest
-    md5sum $dest >$dest.md5
+    pushd $(dirname $dest) \
+    && md5sum $(basename $dest) >$(basename $dest).md5 \
+    && popd
 done
 
 # Move undetermined FASTQ files.
@@ -64,6 +67,8 @@ for path in $srcdir/Undetermined_*; do
     dest={snakemake.params.output_dir}/Undetermined/$flowcell/$lane/$(basename $path)
 
     mv $path $dest
-    md5sum $dest >$dest.md5
+    pushd $(dirname $dest) \
+    && md5sum $(basename $dest) >$(basename $dest).md5 \
+    && popd
 done
 """)

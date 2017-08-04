@@ -270,7 +270,7 @@ class Bcl2FastqV1Wrapper(Bcl2FastqBaseWrapper):
     @listify
     def get_output_files(self):
         """Return list of paths to output files"""
-        flow_cell = self.parent.sample_sheet.flow_cell
+        flow_cell = self.sample_sheet.flow_cell
         for lib in flow_cell.libraries + flow_cell.undetermined_libraries:
             for lane in sorted(lib.lanes):
                 if not self.lane_enabled(lane):
@@ -278,10 +278,11 @@ class Bcl2FastqV1Wrapper(Bcl2FastqBaseWrapper):
                 sample_name = lib.name
                 if lib.barcode_seq(1) == 'Undetermined':
                     sample_name = 'Undetermined'
-                out_dir = ('{args.output_dir}/{sample_name}/'
+                output_dir = self.config['cubi_demux']['output_dir']
+                out_dir = ('{output_dir}/{sample_name}/'
                            '{flowcell}/L{lane:03d}').format(
                                flowcell=flow_cell.name_tokens.flow_cell,
-                               args=self.parent.args,
+                               output_dir=output_dir,
                                sample_name=sample_name,
                                lane=lane)
                 for fname in lib.file_names(flow_cell.rta_version,
