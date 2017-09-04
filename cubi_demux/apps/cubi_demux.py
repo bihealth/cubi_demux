@@ -75,7 +75,8 @@ def work(args, workdir, config_path, config):
     if args.verbose:
         argv.append('--verbose')
     for k, v in vars(args).items():
-        argv += ['--config', '{}={}'.format(k, v)]
+        if v is not None:
+            argv += ['--config', '{}={}'.format(k, v)]
     argv = list(map(str, argv))
     print('Executing "snakemake {}"...'.format(' '.join(argv)),
           file=sys.stderr)
