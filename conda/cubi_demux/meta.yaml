@@ -1,6 +1,6 @@
 {% set name = "cubi_demux" %}
 {% set version = "0.1.1" %}
-{% set sha256 = "" %}
+{% set sha256 = "8e358cec790e0437be953261b9d3b488797813595a07d11e60959150d5c978ba" %}
 
 package:
   name: {{ name }}

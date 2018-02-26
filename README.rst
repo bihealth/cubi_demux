@@ -128,7 +128,12 @@ As ``cubi_demux`` relies on Snakemake's conda integration, the instructions abov
 
     $ export BCL2FASTQ_CHANNEL=file://$HOME/local_channel
     $ conda build conda/cubi_demux
-    $ cp XXX $HOME/local_channel/linux-64
+    [...]
+    anaconda upload /bioconda/2018-02/miniconda3/conda-bld/linux-64/cubi_demux-0.1.1-py36_1.tar.bz2
+    [...]
+    $ cp \
+        /bioconda/2018-02/miniconda3/conda-bld/linux-64/cubi_demux-0.1.1-py36_1.tar.bz2 \
+        $HOME/local_channel/linux-64
     $ conda index $HOME/local_channel/linux-64
 
 Installing ``cubi_demux``
