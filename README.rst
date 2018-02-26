@@ -23,12 +23,88 @@ Overall Workflow
 
 After installation (see below), the overall workflow is as follows:
 
-1. Generate a global configuration file (you can reuse this file for future uses).
+1. Generate a global configuration file (see below, you can reuse this file for future uses).
 2. Generate a sample sheet YAML file using `CUBI Flowcelltool <https://github.com/bihealth/flowcelltool>`_.
 3. Call ``cubi-demux`` pointing it to the sample sheet YAML, as well as the input and output folder.
 4. Wait until the demultiplexing is complete.
 
 And you're done.
+
+----------------------
+Calling ``cubi-demux``
+----------------------
+
+After
+
+- creating the configuration file ``config.yaml`` (see below, the default configuration is fine on the BIH cluster),
+- building the reference data set for screening the demultiplexing result (already done on the BIH cluster), and
+- exporting ``sheet.yml`` from `Flowcelltool <https://github.com/bihealth/flowcelltool>`_,
+
+running demultiplexing is as easy as calling:
+
+.. code-block:: shell
+
+    cubi-demux \
+        --input-dir path/to/FLOWCELL_DIR \
+        --output-dir path/to/RESULT \
+        --config config.yaml \
+        --sample-sheet sheet.yml
+
+-------------
+Configuration
+-------------
+
+Sensible default configuration is shown below together with documentation of the values.
+Below, :ref:`create_screening_data` explains how to build the reference data.
+
+.. code-block:: yaml
+
+    # Configuration for cubi-demux.
+    #
+    # This file is a YAML configuration file.  The default configuration is
+    # preconfigured for the BIH cluster and has to be adjusted accordingly.
+
+    # Configuration for the demultiplexing.
+    cubi_demux:
+      input_dir: null  # path to input, override with `--input-dir`
+      output_dir: null  # path to input, override with `--output-dir`
+      cores: 8   # number of threads, override with `--cores`
+      barcode_mismatches: null  # default is RTA version specific
+      # Selecting lanes and tiles are mutually exclusive.
+      lanes: null  # null or list of integers
+      tiles: null  # tile specifications for bcl2fastq executable
+      continue: false  # continue (do not break if output dir exists)
+
+    # Configuration for the screening after demultiplexing.  You should provide
+    # a list of BWA-indexed references and the path to a Kraken DB.  The data
+    # will first be subsampled and screened versus the given model organisms'
+    # genomes.  Unaligned reads will then be screened by Kraken.
+    hts_screen:
+      sample_rate: 0.001  # sample this rate of reads for screening
+      kraken_db: '/fast/projects/cubit/current/static_data/app_support/kraken/0.10.5-cubi20160426/minikraken_20141208'
+      references:
+      - name: 'H. sapiens'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/hs37/hs37.fa'
+      - name: 'M. musculus'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/NCBIM37/sanger/NCBIM37_um.fa'
+      - name: 'D. rerio'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/danRer10/ucsc/danRer10.fa'
+      - name: 'D. melanogaster'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/dm6/ucsc/dm6.fa'
+      - name: 'S. cerevisiae'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/sacCer3/ucsc/sacCer3.fa'
+      - name: 'E. coli'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/ecoli/GCA_000005845.2_ASM584v2/ecoli.fa'
+      - name: 'Phi X 174'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/phix/illumina/phix.fa'
+      - name: 'Univec 9'
+        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/UniVec/9/UniVec.fa'
+
+    # The sample sheet.  Either a path to the sample sheet or a dict with the
+    # sample sheet.  The path can can also be set with `--sample-sheet`.
+    sample_sheet: null
+
+Copy and paste the configuration into a ``configuration.yaml`` file and adjust the paths according to the location in your installation.
 
 ------------
 Installation
@@ -108,7 +184,7 @@ For the sake of simplicity, we assume this is the same as the build machine and 
 
 .. code-block:: shell
 
-    $ mkdir -p $HOME/local_channel/linux-64
+    $ mkdir -p $HOME/local_channel/{linux-64,noarch}s
     $ cp packages/* $HOME/local_channel/linux-64
     $ conda index $HOME/local_channel/linux-64
 
@@ -116,25 +192,18 @@ Building ``cubi_demux`` Package
 ===============================
 
 If we were able to redistribute Illumina ``bcl2fastq`` packages via Bioconda, this would be much simpler.
-However, here is how to build a conda package ``cubi_conda``.
-
-Note that this will have the path to your ``local_channel`` baked into the package.
-This means that it cannot be easily ported to another machine that does not have the ``local_channel`` Conda channel as well **in the same location**.
-
-You can build the package on a different one from that you use for demultiplexing, but you have to specify the path to ``local_channel`` on the machine that you will perform demultiplexing one (the deployment machine).
-As ``cubi_demux`` relies on Snakemake's conda integration, the instructions above are complicated but probably the best ones available.
+Now, we have to build a ``bcl2fastq`` conda package on our own:
 
 .. code-block::
 
-    $ export BCL2FASTQ_CHANNEL=file://$HOME/local_channel
     $ conda build conda/cubi_demux
     [...]
     anaconda upload /bioconda/2018-02/miniconda3/conda-bld/linux-64/cubi_demux-0.1.1-py36_1.tar.bz2
     [...]
     $ cp \
-        /bioconda/2018-02/miniconda3/conda-bld/linux-64/cubi_demux-0.1.1-py36_1.tar.bz2 \
+        /bioconda/2018-02/miniconda3/conda-bld/linux-64/cubi_demux-*.tar.bz2 \
         $HOME/local_channel/linux-64
-    $ conda index $HOME/local_channel/linux-64
+    $ conda index $HOME/local_channel/{linux-64,noarch}
 
 Installing ``cubi_demux``
 =========================
@@ -151,61 +220,30 @@ Then, you can install ``cubi_demux``:
 
     $ conda install cubi_demux
 
+However, we now have to use a hack for making the ``local_channel`` known to ``cubi_demux``:
+
+.. code-block::
+
+    $ BCL2FASTQ_CHANNEL=file:/$HOME/local_channel/linux-64
+    $ for path in $(find $(dirname $(which cubi-demux))/../lib/python3.?/site-packages -name '*.yaml.tpl' | grep cubi_demux); do
+        perl -p -e "s|__BCL2FASTQ_CHANNEL__|$BCL2FASTQ_CHANNEL|g" "$path" >"${path%.tpl}"
+    done
+
+.. _create_screening_data:
+
 Create Data for Read Screening and Kraken
 =========================================
 
--------------
-Configuration
--------------
+As a QC method, ``cubi_demux`` contains scripts that fulfill a similar functionality as `FastQ Screen <https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/>`_ but using BWA instead of Bowtie.
+For this, you have to (1) download a Kraken DB (for screening for microbial contamination) and (2) download reference sequences and build an BWA index on them.
+The folder ``misc`` contains a helper script ``build_reference.sh`` to help you in doing so.
+The only prerequisite is that you have conda/bioconda installed and the ``conda`` executable is in your path.
 
-The default configuration is shown below together with documentation.
+.. code-block::
 
-.. code-block:: yaml
-
-    # Configuration for cubi-demux.
-    #
-    # This file is a YAML configuration file.  The default configuration is
-    # preconfigured for the BIH cluster and has to be adjusted accordingly.
-
-    # Configuration for the demultiplexing.
-    cubi_demux:
-      input_dir: null  # path to input, override with `--input-dir`
-      output_dir: null  # path to input, override with `--output-dir`
-      cores: 8   # number of threads, override with `--cores`
-      barcode_mismatches: null  # default is RTA version specific
-      # Selecting lanes and tiles are mutually exclusive.
-      lanes: null  # null or list of integers
-      tiles: null  # tile specifications for bcl2fastq executable
-      continue: false  # continue (do not break if output dir exists)
-
-    # Configuration for the screening after demultiplexing.  You should provide
-    # a list of BWA-indexed references and the path to a Kraken DB.  The data
-    # will first be subsampled and screened versus the given model organisms'
-    # genomes.  Unaligned reads will then be screened by Kraken.
-    hts_screen:
-      sample_rate: 0.001  # sample this rate of reads for screening
-      kraken_db: '/fast/projects/cubit/current/static_data/app_support/kraken/0.10.5-cubi20160426/minikraken_20141208'
-      references:
-      - name: 'H. sapiens'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/hs37/hs37.fa'
-      - name: 'M. musculus'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/NCBIM37/sanger/NCBIM37_um.fa'
-      - name: 'D. rerio'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/danRer10/ucsc/danRer10.fa'
-      - name: 'D. melanogaster'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/dm6/ucsc/dm6.fa'
-      - name: 'S. cerevisiae'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/sacCer3/ucsc/sacCer3.fa'
-      - name: 'E. coli'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/ecoli/GCA_000005845.2_ASM584v2/ecoli.fa'
-      - name: 'Phi X 174'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/phix/illumina/phix.fa'
-      - name: 'Univec 9'
-        bwa_index: '/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/UniVec/9/UniVec.fa'
-
-    # The sample sheet.  Either a path to the sample sheet or a dict with the
-    # sample sheet.  The path can can also be set with `--sample-sheet`.
-    sample_sheet: null
+    $ export BCL2FASTQ_CHANNEL=file:/$HOME/local_channel
+    $ wget https://github.com/bihealth/cubi_demux/XXX
+    $ bash build_reference.sh /tmp/reference
 
 ----------------------
 Command Line Interface
