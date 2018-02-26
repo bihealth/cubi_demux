@@ -1,3 +1,3 @@
 include versioneer.py
 include cubi_demux/_version.py
-recursive-include cubi_demux *.py *.yaml *.yaml.tpl
+recursive-include cubi_demux *.py *.yaml *.yaml.tpl Snakefile
