@@ -2,6 +2,6 @@ channels:
 - bioconda
 - conda-forge
 - defaults
-- file:///home/mholtgre/local_channel/
+- __BCL2FASTQ_CHANNEL__
 dependencies:
 - bcl2fastq2
