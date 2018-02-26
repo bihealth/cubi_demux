@@ -2,7 +2,7 @@
 CUBI Demuxtool
 ==============
 
-Automated demultiplexing + QC.
+Automated demultiplexing + quality control.
 Companion to Flowcelltool.
 
 --------
@@ -17,6 +17,19 @@ Overview
 - screen reads that do not align to model organisms with ``kraken`` for viral/bacterial DNA,
 - aggregate the FastQC and HTS Screen reports using MultiQC.
 
+----------------
+Overall Workflow
+----------------
+
+After installation (see below), the overall workflow is as follows:
+
+1. Generate a global configuration file (you can reuse this file for future uses).
+2. Generate a sample sheet YAML file using `CUBI Flowcelltool <https://github.com/bihealth/flowcelltool>`_.
+3. Call ``cubi-demux`` pointing it to the sample sheet YAML, as well as the input and output folder.
+4. Wait until the demultiplexing is complete.
+
+And you're done.
+
 ------------
 Installation
 ------------
@@ -24,10 +37,22 @@ Installation
 The installation of ``cubi_demux`` itself is very simple but because of its nature, it has a dependency on the open source but not free ``bcl2fastq`` by Illumina.
 We cannot distribute binary packages of that software so please bear with us through the following steps.
 
+Prerequisites
+=============
+
+- Install Docker (e.g., `following the instructions from Docker.com <https://docs.docker.com/install/>`_.
+- Get the ``bioconda-utils-build-env`` container:
+
+    .. code-block:: shell
+
+    $ docker pull bioconda/bioconda-utils-build-env
+
 Building ``bcl2fastq`` Conda Packages
 =====================================
 
 First, setup Bioconda build installation (to ``~/miniconda3``, you might want to use a different path).
+
+You can do this on a different server from the one that you will execute ``cubi_demux`` on.
 
 .. code-block:: shell
 
@@ -39,13 +64,15 @@ First, setup Bioconda build installation (to ``~/miniconda3``, you might want to
     $ conda config --add channels conda-forge
     $ conda config --add channels bioconda
 
+    $ conda install conda-build
+
 Next, clone the ``cubi_demux`` Git repository
 
 .. code-block:: shell
 
     $ git clone https://github.com/bihealth/cubi_demux.git
     $ cd cubi_demux
-    $ git checkout v0.1.0
+    $ git checkout master
 
 Next, we download the ``bcl2fastq`` source packages.
 
@@ -58,24 +85,69 @@ Next, we download the ``bcl2fastq`` source packages.
         ftp://webdata2:webdata2@ussd-ftp.illumina.com/downloads/software/bcl2fastq/bcl2fastq2-v2-20-0-tar.zip
     $ cd ..
 
-Simply type (on the BIH cluster only at the moment):
+Then, we build the conda packages but inside the ``bioconda-utils-build-env`` container:
 
 .. code-block:: shell
 
-    $ conda config --add channels http://cubi-conda.bihealth.org
+    host $ mkdir packages
+    host $ docker run -v $PWD:/cubi_demux -i -t bioconda/bioconda-utils-build-env /bin/bash
+
+    container $ cd /cubi_demux
+
+    container $ conda build conda/bcl2fastq-v1.8.4
+    [...]
+    container $ cp /opt/conda/conda-bld/linux-64/bcl2fastq-1.8.4-pl5.20.3_4.tar.bz2 packages
+
+    container $ conda build conda/bcl2fastq2-v2.17.1.14
+    [...]
+    container $ cp /opt/conda/conda-bld/linux-64/bcl2fastq2-2.17.1.14-2.tar.bz2 packages
+
+We now have to create a local conda repository containing these packages somewhere on the file system **where you want to run demultiplexing**.
+For example, this would be on the demultiplexing server in the case of working on one server or the shared cluster file system in the case of working with HPC.
+For the sake of simplicity, we assume this is the same as the build machine and create the repository in your home folder:
+
+.. code-block:: shell
+
+    $ mkdir -p $HOME/local_channel/linux-64
+    $ cp packages/* $HOME/local_channel/linux-64
+    $ conda index $HOME/local_channel/linux-64
+
+Building ``cubi_demux`` Package
+===============================
+
+If we were able to redistribute Illumina ``bcl2fastq`` packages via Bioconda, this would be much simpler.
+However, here is how to build a conda package ``cubi_conda``.
+
+Note that this will have the path to your ``local_channel`` baked into the package.
+This means that it cannot be easily ported to another machine that does not have the ``local_channel`` Conda channel as well **in the same location**.
+
+You can build the package on a different one from that you use for demultiplexing, but you have to specify the path to ``local_channel`` on the machine that you will perform demultiplexing one (the deployment machine).
+As ``cubi_demux`` relies on Snakemake's conda integration, the instructions above are complicated but probably the best ones available.
+
+.. code-block::
+
+    $ export BCL2FASTQ_CHANNEL=file://$HOME/local_channel
+    $ conda build conda/cubi_demux
+    $ cp XXX $HOME/local_channel/linux-64
+    $ conda index $HOME/local_channel/linux-64
+
+Installing ``cubi_demux``
+=========================
+
+First, make your ``local_channel`` Conda channel known to conda
+
+.. code-block::
+
+    $ conda config --add channels file://$HOME/local_channel
+
+Then, you can install ``cubi_demux``:
+
+.. code-block::
+
     $ conda install cubi_demux
 
-----------------
-Overall Workflow
-----------------
-
-The overall workflow is as follows:
-
-1. Generate a sample sheet YAML file using `CUBI Flowcelltool <https://github.com/bihealth/flowcelltool>`_.
-2. Call ``cubi-demux`` pointing it to the sample sheet YAML, as well as the input and output folder.
-3. Wait until the demultiplexing is complete.
-
-And you're done.
+Create Data for Read Screening and Kraken
+=========================================
 
 -------------
 Configuration
@@ -83,7 +155,7 @@ Configuration
 
 The default configuration is shown below together with documentation.
 
-::
+.. code-block:: yaml
 
     # Configuration for cubi-demux.
     #

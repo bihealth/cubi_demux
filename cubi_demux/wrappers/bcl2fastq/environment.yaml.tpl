@@ -2,6 +2,6 @@ channels:
 - bioconda
 - conda-forge
 - defaults
-- http://cubi-conda.bihealth.org/cubiconda/
+- file:///home/mholtgre/local_channel/
 dependencies:
 - bcl2fastq

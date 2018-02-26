@@ -1,0 +1,40 @@
+{% set name = "cubi_demux" %}
+{% set version = "0.1.1" %}
+{% set sha256 = "" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+build:
+  number: 1
+  skip: False
+
+source:
+  fn: cubi_demux-{{ version }}.tar.gz
+  url: https://github.com/bihealth/{{ name }}/archive/v{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+requirements:
+  build:
+  - python
+  - setuptools
+  - ruamel.yaml >=0.15
+  - snakemake >=3.13
+  run:
+  - python
+  - ruamel.yaml >=0.15
+  - snakemake >=3.13
+
+test:
+  # Python imports
+  imports:
+  - cubi_demux
+  commands:
+  - cubi-demux --version
+  - cubi-demux --version | grep "{{ version }}"
+
+about:
+  home: https://github.com/bihealth/cubi_demux
+  license: MIT
+  summary: Wrapped Snakemake workflow for demultiplexing and QC of Illumina flow cells.
