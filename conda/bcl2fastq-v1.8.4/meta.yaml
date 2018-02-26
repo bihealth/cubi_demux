@@ -1,0 +1,30 @@
+about:
+  home: https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html/
+
+package:
+  name: bcl2fastq
+  version: '1.8.4'
+
+build:
+  number: 4
+  skip: False
+
+test:
+  commands:
+  - configureBclToFastq.pl --help
+
+requirements:
+  build:
+  - libxml2
+  - gcc ==4.8.5
+  - libgcc ==7.2.0
+  - cmake ==3.10.0
+  - zlib >=1.2.8
+  - bzip2
+  run:
+  - perl-xml-simple
+  - libxml2
+  - perl
+  - libgcc >=7.2.0
+  - zlib >=1.2.8
+  - bzip2

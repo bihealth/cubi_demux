@@ -1,0 +1,49 @@
+--- a/src/c++/include/common/FileConversion.hh	2017-03-08 16:38:26.112254533 +0100
++++ b/src/c++/include/common/FileConversion.hh	2017-03-08 16:39:25.397708760 +0100
+@@ -30,6 +30,7 @@
+ #include <iostream>
+ #include <string>
+ #include <vector>
++#include <stdint.h>
+
+ namespace casava {
+ namespace common {
+
+--- a/src/c++/include/demultiplex/BarcodeTranslationTable.hh	2017-03-08 16:41:34.840153107 +0100
++++ b/src/c++/include/demultiplex/BarcodeTranslationTable.hh	2017-03-08 16:41:23.352646014 +0100
+@@ -26,6 +26,7 @@
+ #include <boost/filesystem.hpp>
+ #include <boost/foreach.hpp>
+ #include <boost/iterator/transform_iterator.hpp>
++#include <stdint.h>
+
+ #include "common/Exceptions.hh"
+
+--- a/src/perl/lib/Casava/Alignment/Config.pm	2017-03-08 17:21:54.648138326 +0100
++++ b/src/perl/lib/Casava/Alignment/Config.pm	2017-03-08 17:22:07.051605978 +0100
+@@ -744,11 +744,11 @@
+ {
+     my $self = shift;
+     my ($project, $sample, $lane, $barcode, $reference) = @_;
+-    for my $variable qw(ELAND_FASTQ_FILES_PER_PROCESS)
++    for my $variable (qw(ELAND_FASTQ_FILES_PER_PROCESS))
+     {
+         $self->_validateExistence($variable, $project, $sample, $lane, $barcode, $reference);
+     }
+-    for my $directory qw(ELAND_GENOME)
++    for my $directory (qw(ELAND_GENOME))
+     {
+         $self->_validateDirectory($directory, $project, $sample, $lane, $barcode, $reference);
+     }
+
+--- a/src/perl/bin/configureBclToFastq.pl	2017-03-08 17:29:39.960172800 +0100
++++ b/src/perl/bin/configureBclToFastq.pl	2017-03-08 17:29:56.687455221 +0100
+@@ -327,7 +327,7 @@
+
+ $cmdAndArgs = '' if $skipVariableMetadata;
+
+-pod2usage(1) if $help;
++pod2usage(0) if $help;
+ pod2usage(-verbose => 2,  -input => $1) if ($man and $0 =~ /(.*)/);
+ errorExit("ERROR: Unrecognized command-line argument(s): @ARGV")  if (0 < @ARGV);
+
