@@ -224,7 +224,7 @@ However, we now have to use a hack for making the ``local_channel`` known to ``c
 
 .. code-block::
 
-    $ BCL2FASTQ_CHANNEL=file:/$HOME/local_channel/linux-64
+    $ BCL2FASTQ_CHANNEL=file:/$HOME/local_channel
     $ for path in $(find $(dirname $(which cubi-demux))/../lib/python3.?/site-packages -name '*.yaml.tpl' | grep cubi_demux); do
         perl -p -e "s|__BCL2FASTQ_CHANNEL__|$BCL2FASTQ_CHANNEL|g" "$path" >"${path%.tpl}"
     done
