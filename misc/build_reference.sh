@@ -12,10 +12,10 @@ if [[ -z "$1" ]]; then
     exit 1
 fi
 
-#if [[ -e "$1" ]]; then
-#    >&2 echo "Output directory $1 already exists!"
-#    exit 1
-#fi
+if [[ -e "$1" ]]; then
+    >&2 echo "Output directory $1 already exists!"
+    exit 1
+fi
 
 set -x
 
@@ -74,7 +74,9 @@ cd ..
 
 mkdir -p sacCer3/tmp
 cd sacCer3/tmp
-wget http://hgdownload-test.soe.ucsc.edu/goldenPath/sacCer3/bigZips/chromFa.tar.gz
+test -e chromFa.tar.gz || \
+    wget http://hgdownload-test.soe.ucsc.edu/goldenPath/sacCer3/bigZips/chromFa.tar.gz
+tar xf chromFa.tar.gz
 cd ..
 cat tmp/*.fa >sacCer3.fa
 bwa index sacCer3.fa
@@ -91,6 +93,7 @@ cd ..
 mkdir -p phix/tmp
 cd phix/tmp
 wget ftp://igenome:G3nom3s4u@ussd-ftp.illumina.com/PhiX/Illumina/RTA/PhiX_Illumina_RTA.tar.gz
+tar xf PhiX_Illumina_RTA.tar.gz
 cd ..
 cp tmp/PhiX/Illumina/RTA/Sequence/WholeGenomeFasta/genome.fa phix.fa
 bwa index phix.fa
@@ -101,6 +104,7 @@ cd UniVec/tmp
 wget ftp://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec
 cd ..
 mv tmp/UniVec UniVec.fa
+bwa index UniVec.fa
 cd ..
 
 mkdir -p kraken/tmp
@@ -108,6 +112,7 @@ cd kraken/tmp
 wget http://ccb.jhu.edu/software/kraken/dl/minikraken.tgz
 cd ..
 tar tf tmp/minikraken.tgz
+cd ..
 
 # Print Result -------------------------------------------------------------------------------------
 
@@ -117,8 +122,8 @@ cat <<EOF
 
 == Recommended config.yaml =========================================================================
 
--- 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ----
-
+# BEGIN: config.yaml
+#
 # Configuration for cubi-demux.
 #
 # This file is a YAML configuration file.  The default configuration is
@@ -126,9 +131,9 @@ cat <<EOF
 
 # Configuration for the demultiplexing.
 cubi_demux:
-  input_dir: null  # path to input, override with `--input-dir`
-  output_dir: null  # path to input, override with `--output-dir`
-  cores: 8   # number of threads, override with `--cores`
+  input_dir: null  # path to input, override with "--input-dir"
+  output_dir: null  # path to input, override with "--output-dir"
+  cores: 8   # number of threads, override with "--cores"
   barcode_mismatches: null  # default is RTA version specific
   # Selecting lanes and tiles are mutually exclusive.
   lanes: null  # null or list of integers
@@ -146,7 +151,7 @@ hts_screen:
   - name: 'H. sapiens'
     bwa_index: '$(readlink -f hs37/hs37.fa)'
   - name: 'M. musculus'
-    bwa_index: '$(readlink -f NCBIM/NCBIM37_um.fa)'
+    bwa_index: '$(readlink -f NCBIM37/NCBIM37_um.fa)'
   - name: 'D. rerio'
     bwa_index: '$(readlink -f danRer10/danRer10.fa)'
   - name: 'D. melanogaster'
@@ -161,9 +166,9 @@ hts_screen:
     bwa_index: '$(readlink -f UniVec/UniVec.fa)'
 
 # The sample sheet.  Either a path to the sample sheet or a dict with the
-# sample sheet.  The path can can also be set with `--sample-sheet`.
+# sample sheet.  The path can can also be set with "--sample-sheet".
 sample_sheet: null
 
--- 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ------ 8< ----
+# END: config.yaml
 
 EOF
