@@ -78,7 +78,7 @@ def run(args):
 
     perc_no_hits = 100 * num_reads_no_hits / num_reads
     print(file=args.out_file)
-    print('%Hit_no_genomes {:.02f}'.format(perc_no_hits), file=args.out_file)
+    print('%Hit_no_genomes: {:.02f}'.format(perc_no_hits), file=args.out_file)
 
 
 def main(argv=None):

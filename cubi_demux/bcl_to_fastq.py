@@ -39,7 +39,7 @@ class Library:
         #: Second barcode, only used for dual indexing
         self.barcode2 = barcode2
 
-    def barcode_seq(self, version):
+    def barcode_seq(self, version, dual=False):
         """Return barcode sequence for sample sheet"""
         assert version in [1, 2]
         if version == 1:
@@ -50,6 +50,8 @@ class Library:
         else:  # version == 2
             if self.barcode2:
                 return (self.barcode.seq, self.barcode2.seq)
+            elif dual:
+                return (self.barcode.seq, '')
             else:
                 return (self.barcode.seq,)
 
@@ -191,8 +193,8 @@ class SampleSheet:
         writer = csv.writer(f)
         # Write [Data] Section
         writer.writerow(['[Data]'])
-        barcode2 = any([library.barcode2
-                        for library in self.flow_cell.libraries])
+        barcode2 = any(library.barcode2
+                       for library in self.flow_cell.libraries)
         if barcode2:
             writer.writerow(['lane', 'sample_id', 'index', 'index2',
                              'sample_project'])
@@ -201,8 +203,10 @@ class SampleSheet:
         rows = []
         for lib in self.flow_cell.libraries:
             for lane in sorted(lib.lanes):
-                rows.append([lane, lib.name] + list(lib.barcode_seq(2)) +
-                            ['Project'])
+                import sys; print('dual = {}'.format(barcode2), file=sys.stderr)
+                rows.append(
+                    [lane, lib.name] + list(lib.barcode_seq(2, barcode2)) +
+                    ['Project'])
         for row in sorted(rows):
             writer.writerow(list(map(str, row)))
 

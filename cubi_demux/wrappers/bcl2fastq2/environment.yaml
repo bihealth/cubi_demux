@@ -2,6 +2,6 @@ channels:
 - bioconda
 - conda-forge
 - defaults
-- __BCL2FASTQ_CHANNEL__
+- http://cubi-conda.bihealth.org/cubiconda/
 dependencies:
 - bcl2fastq2

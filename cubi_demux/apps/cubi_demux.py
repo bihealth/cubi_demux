@@ -53,6 +53,12 @@ def write_config_file(args):
     if isinstance(config['sample_sheet'], str):
         with open(config['sample_sheet'], 'rt') as f:
             config['sample_sheet'] = YAML(typ='safe', pure=True).load(f)
+    # Get barcode mismatches from sheet, if any.
+    mismatches = config['sample_sheet'][0].get('bcl2fastq_args', {}).get(
+        'barcode_mismatches')
+    if (config['cubi_demux']['barcode_mismatches'] is None
+            and mismatches is not None):
+        config['cubi_demux']['barcode_mismatches'] = mismatches
     # Write out configuration as JSON.
     out_path = os.path.join(args.output_dir, CONFIG_FILE)
     print('Writing configuration+sheet to {}'.format(out_path),
@@ -73,7 +79,7 @@ def work(args, workdir, config_path, config):
         '--use-conda'
     ]
     if args.verbose:
-        argv.append('--verbose')
+        argv += ['--verbose', '--printshellcmds']
     for k, v in vars(args).items():
         if v is not None:
             argv += ['--config', '{}={}'.format(k, v)]

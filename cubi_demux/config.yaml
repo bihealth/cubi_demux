@@ -19,7 +19,7 @@ cubi_demux:
 # will first be subsampled and screened versus the given model organisms'
 # genomes.  Unaligned reads will then be screened by Kraken.
 hts_screen:
-  sample_rate: 0.001  # sample this rate of reads for screening
+  sample_rate: 0.01  # sample this rate of reads for screening
   kraken_db: '/fast/projects/cubit/current/static_data/app_support/kraken/0.10.5-cubi20160426/minikraken_20141208'
   references:
   - name: 'H. sapiens'
